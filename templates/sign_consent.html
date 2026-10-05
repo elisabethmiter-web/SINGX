@@ -1,0 +1,24 @@
+{% extends "client_base.html" %}
+{% block title %}Review {{ e.title }}{% endblock %}
+{% block content %}
+<section class="stack" style="gap:8px">
+  <span class="eyebrow">From {{ business_name }}</span>
+  <h1>{{ e.title }}</h1>
+  <p class="muted">Hi {{ r.name }}, please review and sign the documents {{ business_name }} sent you.</p>
+</section>
+{% if e.message %}<section class="panel"><span class="eyebrow">Message from {{ business_name }}</span><p style="white-space:pre-wrap">{{ e.message }}</p></section>{% endif %}
+<form class="panel" method="post" action="{{ url_for('sign_consent', token=r.token) }}">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <h2>Electronic record and signature disclosure</h2>
+  <div class="disclosure small">
+    <p>{{ business_name }} would like to send you documents and collect your signature electronically. By agreeing, you confirm that:</p>
+    <ul>
+      <li>you're able to view and keep the documents on this device (you can download a copy when everyone has signed);</li>
+      <li>you agree to use electronic records and signatures for this transaction, and your electronic signature is as valid as one on paper;</li>
+      <li>you can ask {{ business_name }} for a paper copy, or choose not to sign electronically by declining instead.</li>
+    </ul>
+  </div>
+  <label class="check" for="agree"><input type="checkbox" id="agree" name="agree" required> <span>I agree to use electronic records and signatures.</span></label>
+  <div><button class="btn btn-primary btn-lg">Continue</button></div>
+</form>
+{% endblock %}

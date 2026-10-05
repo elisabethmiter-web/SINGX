@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Templates{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Templates</span><h1>Reusable documents</h1>
+<p class="muted">Set fields up once for documents you send often, then fill in names and send.</p></div></div>
+<details class="panel" {{ 'open' if not items }}>
+  <summary style="cursor:pointer"><h3 style="display:inline">Create a template</h3></summary>
+  <form method="post" action="{{ url_for('new_template') }}" enctype="multipart/form-data" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <div class="grid-2">
+      <label for="tname">Template name<input id="tname" type="text" name="name" placeholder="e.g. Consulting agreement"></label>
+      <label for="tfiles">PDF documents<input id="tfiles" type="file" name="files" accept="application/pdf" multiple required></label>
+    </div>
+    <p class="muted small">Tip: you can also save any draft envelope as a template from the editor.</p>
+    <div><button class="btn btn-primary">Upload and place fields</button></div>
+  </form>
+</details>
+{% if items %}
+<div class="forms-grid">
+{% for t in items %}
+  <article class="form-card">
+    <span class="kind">{{ t.docs|length }} document{{ 's' if t.docs|length!=1 }} · {{ t.nfields }} field{{ 's' if t.nfields!=1 }}</span>
+    <h3>{{ t.name }}</h3>
+    <div class="row" style="gap:6px">{% for r in t.roles %}<span class="role-chip"><span class="rdot" style="--rc: var(--r{{ loop.index0 % 6 }})"></span>{{ r.role }}</span>{% endfor %}</div>
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('use_template', tid=t.id) }}">Use</a>
+      <a class="btn btn-quiet" href="{{ url_for('edit_template', tid=t.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('delete_template', tid=t.id) }}" onsubmit="return confirm('Delete this template?')">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn btn-quiet btn-danger">Delete</button></form>
+    </div>
+  </article>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

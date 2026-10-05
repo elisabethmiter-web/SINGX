@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Use {{ t.name }}{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="small" href="{{ url_for('templates_list') }}">← Templates</a><h1>{{ t.name }}</h1>
+<p class="muted">Fill in who plays each role. Fields are already placed.</p></div></div>
+<form class="panel" method="post">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  {% for r in roles %}
+  <fieldset class="role-set">
+    <legend><span class="rdot" style="--rc: var(--r{{ loop.index0 % 6 }})"></span>{{ r.role }} <span class="muted small">· {{ 'Signs' if r.kind=='signer' else 'Gets a copy' }}, order {{ r.order }}</span></legend>
+    <div class="grid-2">
+      <label for="name_{{ r.key }}">Name<input id="name_{{ r.key }}" type="text" name="name_{{ r.key }}" value="{{ form.get('name_'~r.key,'') }}" required></label>
+      <label for="email_{{ r.key }}">Email<input id="email_{{ r.key }}" type="email" name="email_{{ r.key }}" value="{{ form.get('email_'~r.key,'') }}" required></label>
+    </div>
+  </fieldset>
+  {% endfor %}
+  <label for="title">Email subject<input id="title" type="text" name="title" value="{{ form.get('title', t.name) }}"></label>
+  <label for="message">Message <span class="hint">Optional</span><textarea id="message" name="message" rows="3">{{ form.get('message', t.message or '') }}</textarea></label>
+  <div class="row"><button class="btn btn-primary btn-lg" name="action" value="send">Send now</button>
+    <button class="btn btn-lg" name="action" value="edit">Review fields first</button></div>
+</form>
+{% endblock %}

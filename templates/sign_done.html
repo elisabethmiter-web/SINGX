@@ -1,0 +1,16 @@
+{% extends "client_base.html" %}
+{% block title %}{{ 'Completed' if e.status=='completed' else 'Signed' }}{% endblock %}
+{% block content %}
+<section class="panel receipt">
+  <div class="seal"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+  {% if e.status=='completed' %}
+    <h1>All parties have signed</h1>
+    <p class="muted" style="max-width:52ch">“{{ e.title }}” is complete.{{ ' A copy has been emailed to ' ~ r.email ~ '.' if email_enabled else '' }} Download it for your records.</p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('sign_download', token=r.token) }}">Download completed PDF</a>
+  {% else %}
+    <h1>You're done signing</h1>
+    <p class="muted" style="max-width:52ch">Thanks, {{ r.adopted_name or r.name }}. We're waiting on {{ waiting|map(attribute='name')|join(', ') }}. {{ "You'll get the completed document by email." if email_enabled else "Come back to this link once everyone has signed to download the completed document." }}</p>
+  {% endif %}
+  <span class="ref">Envelope ID {{ short_ref(e.ref) }}</span>
+</section>
+{% endblock %}

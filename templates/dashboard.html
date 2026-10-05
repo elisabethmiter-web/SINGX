@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Envelopes{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Envelopes</span><h1>Agreements</h1></div></div>
+<div class="stats">
+  <a class="stat" href="?show=waiting"><span class="eyebrow">Waiting for others</span><strong>{{ counts.waiting }}</strong><span class="muted small">out for signature</span></a>
+  <a class="stat" href="?show=completed"><span class="eyebrow">Completed</span><strong>{{ counts.completed }}</strong><span class="muted small">everyone signed</span></a>
+  <a class="stat" href="?show=draft"><span class="eyebrow">Drafts</span><strong>{{ counts.draft }}</strong><span class="muted small">not sent yet</span></a>
+  <a class="stat" href="?show=attention"><span class="eyebrow">Needs attention</span><strong>{{ counts.attention }}</strong><span class="muted small">declined, voided or expired</span></a>
+</div>
+<section class="panel">
+  <div class="tabs">
+    {% for k,l in [('all','All'),('waiting','Waiting'),('completed','Completed'),('draft','Drafts'),('attention','Needs attention')] %}
+    <a href="?show={{ k }}" class="{{ 'active' if show==k }}">{{ l }}</a>{% endfor %}
+  </div>
+  {% if items %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Subject</th><th>Status</th><th>Signers</th><th>Last change</th></tr></thead>
+    <tbody>
+    {% for i in items %}{% set e = i.e %}
+      <tr class="clickable" onclick="location.href='{{ url_for('envelope_detail', eid=e.id) }}'">
+        <td><div class="client-cell"><a href="{{ url_for('envelope_detail', eid=e.id) }}">{{ e.title }}</a>
+          <span class="muted small">{% if i.signers %}To: {{ i.signers|map(attribute='name')|join(', ') }}{% else %}No recipients yet{% endif %}</span></div></td>
+        <td><span class="stamp s-{{ i.state }}">{{ STATE_LABELS[i.state] }}</span>
+          {% if i.waiting_on and i.state=='sent' %}<div class="muted small" style="margin-top:4px">Waiting on {{ i.waiting_on.name }}</div>{% endif %}</td>
+        <td>{% if i.signers %}<div class="progress"><div class="bar {{ 'done' if i.signed==i.signers|length }}"><span style="width:{{ (100*i.signed/(i.signers|length))|round|int }}%"></span></div>{{ i.signed }}/{{ i.signers|length }}</div>{% else %}—{% endif %}</td>
+        <td class="small muted">{{ (e.completed_at or e.voided_at or e.declined_at or e.sent_at or e.created_at)|day }}</td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+  <div class="empty">
+    <h2>{{ 'Nothing here' if show!='all' else 'Send your first document' }}</h2>
+    <p class="muted">Upload a PDF, add who needs to sign, drop signature fields where they go, and send. You'll see here when each person views and signs.</p>
+    <a class="btn btn-primary" href="{{ url_for('new_envelope') }}">New envelope</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

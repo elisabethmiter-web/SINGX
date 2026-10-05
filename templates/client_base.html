@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% include "_head.html" %}
+<meta name="robots" content="noindex">
+<title>{% block title %}{% endblock %} · {{ business_name }}</title>
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<header class="client-top"><div class="inner">
+  <span class="brand">{% include "_mark.html" %}{{ business_name }}</span>
+  {% block topright %}{% endblock %}
+</div></header>
+{% block fullbleed %}
+<main class="client-wrap">
+{% include "_flash.html" %}
+{% block content %}{% endblock %}
+</main>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

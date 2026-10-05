@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% set EV = {'created':'Created','sent':'Sent','delivered':'Delivered','viewed':'Viewed','consented':'Consented','signed':'Signed','completed':'Completed','declined':'Declined','voided':'Voided','reminder':'Reminder','extended':'Extended','corrected':'Corrected','email_failed':'Email failed','copies_sent':'Copies sent'} %}
+{% block title %}{{ e.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><a class="small" href="{{ url_for('dashboard') }}">← Envelopes</a>
+    <div class="row"><h1>{{ e.title }}</h1><span class="stamp s-{{ state }}">{{ STATE_LABELS[state] }}</span></div>
+    <p class="muted small">Envelope ID <span class="mono">{{ e.ref }}</span></p></div>
+  <div class="row">
+    {% if state=='completed' %}<a class="btn btn-primary" href="{{ url_for('admin_completed', eid=e.id) }}">Download completed PDF</a>{% endif %}
+    <form method="post" action="{{ url_for('copy_envelope', eid=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn">Copy as new</button></form>
+  </div>
+</div>
+
+{% if state=='completed' %}
+<div class="flash flash-ok">Completed {{ e.completed_at|when }}. The PDF includes every signature and a Certificate of Completion. Fingerprint <span class="mono">{{ e.completed_sha256[:16] }}…</span></div>
+{% elif state=='declined' %}
+{% for r in recips if r.status=='declined' %}<div class="flash flash-error">{{ r.name }} declined to sign on {{ r.declined_at|when }}: “{{ r.decline_reason }}”. Make changes with <em>Copy as new</em> and send again.</div>{% endfor %}
+{% elif state=='voided' %}
+<div class="flash flash-error">Voided {{ e.voided_at|when }}: {{ e.void_reason }}</div>
+{% elif state=='expired' %}
+<div class="flash flash-error">The signing links expired on {{ e.expires_at|day }}. <form method="post" action="{{ url_for('extend', eid=e.id) }}" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn btn-quiet small">Extend {{ 30 }} days</button></form></div>
+{% endif %}
+{% include "_flash.html" %}
+
+<div class="detail-grid">
+  <div class="stack">
+  <section class="panel">
+    <div class="panel-head"><h2>Recipients</h2>{% if state=='sent' %}<span class="muted small">Links work until {{ e.expires_at|day }}</span>{% endif %}</div>
+    <ol class="route">
+    {% for r in recips %}
+      {% set active = state=='sent' and r.kind=='signer' and r.status in ('sent','viewed') %}
+      <li class="route-step {{ 'is-active' if active }} st-{{ r.status }}" style="--rc: var(--r{{ loop.index0 % 6 }})">
+        <span class="route-order">{{ r.routing_order }}</span>
+        <div class="route-main">
+          <div class="row" style="justify-content:space-between">
+            <div><strong>{{ r.name }}</strong> <span class="muted small">{{ r.email }}</span><br>
+              <span class="small muted">{{ 'Needs to sign' if r.kind=='signer' else 'Receives a copy' }}{% if r.kind=='signer' %} · {{ field_count[r.rkey] }} field{{ 's' if field_count[r.rkey]!=1 }}{% endif %}</span></div>
+            <span class="stamp s-r-{{ r.status }}">{{ RECIPIENT_LABELS[r.status] }}</span>
+          </div>
+          <div class="small muted route-times">
+            {% if r.sent_at %}Sent {{ r.sent_at|when }}{% endif %}{% if r.viewed_at %} · Viewed {{ r.viewed_at|when }}{% endif %}{% if r.signed_at %} · Signed {{ r.signed_at|when }}{% endif %}
+            {% if r.status=='created' and state=='sent' and r.kind=='signer' %}Waiting for earlier signers to finish{% endif %}
+          </div>
+          {% if active %}
+          <div class="linkbox"><input type="text" readonly value="{{ sign_link(r.token) }}" aria-label="Signing link for {{ r.name }}" id="link-{{ r.id }}">
+            <button class="btn btn-primary copy" type="button" data-target="link-{{ r.id }}">Copy link</button>
+            {% if email_enabled %}<form method="post" action="{{ url_for('resend', eid=e.id, rid=r.id) }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn">Resend email</button></form>{% endif %}
+          </div>
+          <p class="muted small">Send this link only to {{ r.name }}. It's unique to them.</p>
+          {% endif %}
+          {% if state=='sent' and r.status in ('created','sent','viewed') %}
+          <details class="small"><summary class="muted" style="cursor:pointer">Correct name or email</summary>
+            <form method="post" action="{{ url_for('correct_recipient', eid=e.id, rid=r.id) }}" class="row" style="margin-top:8px">
+              <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+              <input type="text" name="name" value="{{ r.name }}" aria-label="Name" style="max-width:200px">
+              <input type="email" name="email" value="{{ r.email }}" aria-label="Email" style="max-width:240px">
+              <button class="btn">Update</button></form></details>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>Documents</h2>
+    <div class="doc-list">
+    {% for d in docs %}
+      <div class="doc-row"><div class="doc-main"><strong>{{ d.name }}</strong><span class="small muted">{{ d.pages|length }} page{{ 's' if d.pages|length!=1 }} · SHA-256 <span class="mono">{{ d.sha256[:12] }}…</span></span></div>
+        <a class="btn btn-quiet" href="{{ url_for('admin_original', eid=e.id, doc_id=d.id) }}">Original</a></div>
+    {% endfor %}
+    </div>
+    {% if e.message %}<div class="stack" style="gap:4px"><span class="eyebrow">Message</span><p style="white-space:pre-wrap">{{ e.message }}</p></div>{% endif %}
+  </section>
+
+  {% if state=='sent' %}
+  <section class="panel">
+    <h2>Manage</h2>
+    <div class="row">
+      <form method="post" action="{{ url_for('extend', eid=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn">Extend links</button></form>
+    </div>
+    <details><summary class="btn btn-quiet btn-danger" style="display:inline-flex">Void envelope</summary>
+      <form method="post" action="{{ url_for('void', eid=e.id) }}" class="stack" style="margin-top:10px">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <label for="reason">Reason <span class="hint">Recipients see this if they open their link</span><input id="reason" type="text" name="reason" required></label>
+        <div><button class="btn btn-danger">Void envelope</button></div>
+      </form></details>
+  </section>
+  {% endif %}
+  </div>
+
+  <aside class="panel">
+    <h2>History</h2>
+    <ol class="timeline">
+    {% for ev in events %}
+      <li class="ev-{{ ev.type }}"><div><strong style="font-weight:600">{{ EV.get(ev.type, ev.type) }}</strong>
+        <div class="small">{{ ev.text }}</div>
+        <div class="small muted">{{ ev.at|when }}{% if ev.ip and ev.type in ('viewed','signed','consented','declined') %} · {{ ev.ip }}{% endif %}</div></div></li>
+    {% endfor %}
+    </ol>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('button.copy').forEach(b=>b.addEventListener('click',async()=>{
+  const i=document.getElementById(b.dataset.target);
+  try{await navigator.clipboard.writeText(i.value);}catch(e){i.select();document.execCommand('copy');}
+  b.textContent='Copied';setTimeout(()=>b.textContent='Copy link',1600);}));
+</script>
+{% endblock %}

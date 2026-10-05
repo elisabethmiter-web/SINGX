@@ -1,0 +1,66 @@
+{% extends "client_base.html" %}
+{% block title %}Sign {{ e.title }}{% endblock %}
+{% block bodyclass %}signing-body{% endblock %}
+{% block topright %}<span class="muted small">{{ e.title }}</span>{% endblock %}
+{% block fullbleed %}
+<div class="sign-bar" id="sign-bar">
+  <div class="sign-bar-inner">
+    <div class="sign-bar-text"><strong id="sb-title">Review and complete the highlighted fields</strong><span class="muted small" id="sb-progress"></span></div>
+    <div class="row">
+      <details class="more"><summary class="btn btn-quiet">Other actions</summary>
+        <div class="more-menu"><button type="button" class="btn btn-quiet" id="open-decline">Decline to sign</button>
+        <a class="btn btn-quiet" href="#" id="jump-top">Back to top</a></div></details>
+      <button class="btn btn-primary" id="btn-next" type="button">Start</button>
+      <button class="btn btn-primary" id="btn-finish" type="button" hidden>Finish</button>
+    </div>
+  </div>
+</div>
+<main class="sign-canvas" id="sign-canvas" aria-label="Documents to sign"></main>
+
+<div class="modal" id="adopt-modal" hidden role="dialog" aria-modal="true" aria-labelledby="adopt-title">
+  <div class="modal-card wide">
+    <h2 id="adopt-title">Adopt your signature</h2>
+    <div class="grid-2">
+      <label for="ad-name">Full name<input id="ad-name" type="text" autocomplete="name"></label>
+      <label for="ad-initials">Initials<input id="ad-initials" type="text" maxlength="5" autocomplete="off"></label>
+    </div>
+    <div class="sig-tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-mode="type">Choose style</button>
+      <button type="button" role="tab" aria-selected="false" data-mode="draw">Draw</button>
+    </div>
+    <div id="ad-type" class="stack" style="gap:8px">
+      <div class="adopt-preview"><div><span class="eyebrow">Signature</span><div class="sig-typed-preview" id="pv-sig"></div></div>
+        <div><span class="eyebrow">Initials</span><div class="sig-typed-preview ini" id="pv-ini"></div></div></div>
+    </div>
+    <div id="ad-draw" class="stack" style="gap:8px" hidden>
+      <div class="adopt-preview">
+        <div><div class="panel-head"><span class="eyebrow">Draw signature</span><button type="button" class="btn btn-quiet small" data-clear="sig">Clear</button></div>
+          <div class="sig-pad-wrap"><canvas class="sig-pad" id="pad-sig" aria-label="Draw your signature"></canvas><div class="sig-line"></div></div></div>
+        <div><div class="panel-head"><span class="eyebrow">Draw initials</span><button type="button" class="btn btn-quiet small" data-clear="ini">Clear</button></div>
+          <div class="sig-pad-wrap"><canvas class="sig-pad ini" id="pad-ini" aria-label="Draw your initials"></canvas><div class="sig-line"></div></div></div>
+      </div>
+    </div>
+    <p class="muted small">By selecting Adopt and sign, I agree that this signature and initials will be the electronic representation of my signature and initials on these documents.</p>
+    <p class="field-error" id="ad-error" role="alert"></p>
+    <div class="row"><button class="btn btn-primary" id="ad-confirm" type="button">Adopt and sign</button><button class="btn btn-quiet" id="ad-cancel" type="button">Cancel</button></div>
+  </div>
+</div>
+
+<div class="modal" id="decline-modal" hidden role="dialog" aria-modal="true" aria-labelledby="decline-title">
+  <form class="modal-card" method="post" action="{{ url_for('sign_decline', token=r.token) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <h2 id="decline-title">Decline to sign?</h2>
+    <p class="muted small">The envelope will be cancelled for everyone and {{ business_name }} will be told your reason.</p>
+    <label for="reason">Reason<textarea id="reason" name="reason" rows="3" required></textarea></label>
+    <div class="row"><button class="btn btn-danger">Decline</button><button class="btn btn-quiet" type="button" id="decline-cancel">Keep reviewing</button></div>
+  </form>
+</div>
+
+<div class="modal" id="finish-modal" hidden role="dialog" aria-modal="true">
+  <div class="modal-card"><h2>Submitting…</h2><p class="muted" id="finish-msg">Applying your signature to the documents.</p></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.SIGN = {{ payload|tojson }}; window.CSRF = {{ csrf_token()|tojson }};</script>
+<script src="{{ url_for('static', filename='sign.js') }}"></script>
+{% endblock %}

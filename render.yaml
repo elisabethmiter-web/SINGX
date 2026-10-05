@@ -1,0 +1,23 @@
+# One-click deploy on Render (render.com): New > Blueprint > point at this repo.
+services:
+  - type: web
+    name: formsign
+    runtime: python
+    plan: starter            # a persistent disk needs a paid plan (about US$7/month)
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 --threads 4 --timeout 120 -b 0.0.0.0:$PORT app:app
+    disk:
+      name: formsign-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: BUSINESS_NAME
+        sync: false
+      - key: BASE_URL
+        sync: false

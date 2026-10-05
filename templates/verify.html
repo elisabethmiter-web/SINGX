@@ -1,0 +1,19 @@
+{% extends "client_base.html" %}
+{% block title %}Verify a document{% endblock %}
+{% block content %}
+<section class="stack" style="gap:6px"><span class="eyebrow">Verification</span><h1>Check a signed document</h1>
+<p class="muted" style="max-width:60ch">Upload a completed PDF from {{ business_name }}. We compare its fingerprint with our records to confirm it hasn't been changed since everyone signed. The file isn't stored.</p></section>
+<form class="panel" method="post" enctype="multipart/form-data">
+  <label for="file">Completed PDF<input id="file" type="file" name="file" accept="application/pdf" required></label>
+  <div><button class="btn btn-primary">Check document</button></div>
+</form>
+{% if result %}
+  {% if result.ok %}
+  <section class="panel verify-ok"><h2>Authentic and unchanged</h2>
+    <dl class="meta"><dt>Document</dt><dd>{{ result.e.title }}</dd><dt>Envelope ID</dt><dd class="mono">{{ result.e.ref }}</dd>
+    <dt>Completed</dt><dd>{{ result.e.completed_at|when }}</dd><dt>SHA-256</dt><dd class="mono">{{ result.digest }}</dd></dl></section>
+  {% else %}
+  <section class="panel verify-bad"><h2>Not verified</h2><p>{{ result.msg }}</p>{% if result.digest %}<p class="mono small muted">SHA-256 {{ result.digest }}</p>{% endif %}</section>
+  {% endif %}
+{% endif %}
+{% endblock %}

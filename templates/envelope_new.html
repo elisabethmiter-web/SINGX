@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}New envelope{% endblock %}
+{% block wrapclass %}narrow{% endblock %}
+{% block content %}
+<div class="page-head"><div><a class="small" href="{{ url_for('dashboard') }}">← Envelopes</a><h1>New envelope</h1>
+<p class="muted">Start from a PDF, or from a template you've set up before.</p></div></div>
+<form class="panel" method="post" enctype="multipart/form-data" id="upload-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <h2>Upload documents</h2>
+  <label class="dropzone" for="files" id="dropzone">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+    <span><strong>Drop PDFs here</strong> or click to choose</span>
+    <span class="muted small" id="file-list">One or more PDF files, up to 40 MB total</span>
+    <input id="files" type="file" name="files" accept="application/pdf" multiple required>
+  </label>
+  <label for="title">Email subject <span class="hint">What recipients see. You can change it in the next step.</span>
+    <input id="title" type="text" name="title" placeholder="Please sign: Consulting agreement"></label>
+  <div><button class="btn btn-primary btn-lg">Continue to add recipients and fields</button></div>
+</form>
+{% if templates %}
+<section class="panel">
+  <h2>Or use a template</h2>
+  <div class="doc-list">
+  {% for t in templates %}
+    <div class="doc-row"><div class="doc-main"><strong>{{ t.name }}</strong>
+      <span class="small muted">{{ t.docs|length }} document{{ 's' if t.docs|length!=1 }} · Roles: {{ t.roles|map(attribute='role')|join(', ') }}</span></div>
+      <a class="btn" href="{{ url_for('use_template', tid=t.id) }}">Use</a></div>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const inp=document.getElementById('files'),dz=document.getElementById('dropzone'),list=document.getElementById('file-list');
+inp.addEventListener('change',()=>{list.textContent=[...inp.files].map(f=>f.name).join(', ')||'One or more PDF files';});
+['dragover','dragenter'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(t=>dz.addEventListener(t,()=>dz.classList.remove('over')));
+dz.addEventListener('drop',e=>{e.preventDefault();inp.files=e.dataTransfer.files;inp.dispatchEvent(new Event('change'));});
+</script>
+{% endblock %}

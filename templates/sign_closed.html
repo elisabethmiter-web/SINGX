@@ -1,0 +1,11 @@
+{% extends "client_base.html" %}
+{% block title %}{{ e.title }}{% endblock %}
+{% block content %}
+<section class="panel receipt">
+  {% if reason=='voided' %}<h1>This envelope was voided</h1><p class="muted">{{ business_name }} cancelled it{% if e.void_reason %}: “{{ e.void_reason }}”{% endif %}. Nothing more is needed from you.</p>
+  {% elif reason=='declined' %}<h1>This envelope was declined</h1><p class="muted">A recipient declined to sign, so signing has stopped. {{ business_name }} has been notified.</p>
+  {% elif reason=='expired' %}<h1>This link has expired</h1><p class="muted">Ask {{ business_name }} to extend it or send a new one.</p>
+  {% elif reason=='cc' %}<h1>You'll receive a copy</h1><p class="muted">You're copied on “{{ e.title }}”. When everyone has signed, you can download the completed document from this link.</p>
+  {% else %}<h1>Not your turn yet</h1><p class="muted">Others need to sign “{{ e.title }}” before you. {{ "We'll email you when it's ready." if email_enabled else "Try this link again later." }}</p>{% endif %}
+</section>
+{% endblock %}

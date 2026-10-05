@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit template' if mode=='template' else 'Prepare envelope' }}{% endblock %}
+{% block bodyclass %}editor-body{% endblock %}
+{% block fullbleed %}
+<div class="editor" id="editor">
+  <div class="ed-bar">
+    <div class="ed-bar-left">
+      <a class="small" href="{{ url_for('templates_list') if mode=='template' else url_for('dashboard') }}">← {{ 'Templates' if mode=='template' else 'Envelopes' }}</a>
+      <input type="text" id="ed-title" class="ed-title" aria-label="{{ 'Template name' if mode=='template' else 'Email subject' }}" placeholder="{{ 'Template name' if mode=='template' else 'Email subject' }}">
+    </div>
+    <div class="ed-bar-right">
+      <span class="muted small" id="ed-status" role="status"></span>
+      {% if mode=='envelope' %}
+        <button class="btn btn-quiet" type="button" id="btn-template">Save as template</button>
+        <button class="btn" type="button" id="btn-save">Save draft</button>
+        <button class="btn btn-primary" type="button" id="btn-send">Send</button>
+      {% else %}
+        <button class="btn" type="button" id="btn-save">Save template</button>
+        <a class="btn btn-primary" href="{{ payload.useUrl }}" id="btn-use">Use template</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside class="ed-side ed-left">
+    <section class="ed-section">
+      <div class="panel-head"><h3>{{ 'Roles' if mode=='template' else 'Recipients' }}</h3>
+        <button class="btn btn-quiet small" type="button" id="add-recipient">+ Add</button></div>
+      <p class="muted small">{{ 'Name each role (e.g. Client, Director). You fill in real people when you use the template.' if mode=='template' else 'Same order number signs at the same time; higher numbers sign after.' }}</p>
+      <div id="recipients" class="recip-list"></div>
+    </section>
+    <section class="ed-section">
+      <h3>Message</h3>
+      <textarea id="ed-message" rows="4" placeholder="Optional note shown to every recipient"></textarea>
+    </section>
+    <section class="ed-section">
+      <div class="panel-head"><h3>Documents</h3>
+        <label class="btn btn-quiet small" for="add-doc" style="display:inline-flex">+ Add PDF<input type="file" id="add-doc" accept="application/pdf" multiple hidden></label></div>
+      <div id="doc-list" class="doc-mini"></div>
+    </section>
+    {% if mode=='envelope' %}
+    <form method="post" action="{{ url_for('delete_envelope', eid=e.id) }}" onsubmit="return confirm('Delete this draft?')" class="ed-section">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn btn-quiet btn-danger small">Delete draft</button></form>
+    {% endif %}
+  </aside>
+
+  <main class="ed-canvas" id="canvas" tabindex="-1" aria-label="Document pages"></main>
+
+  <aside class="ed-side ed-right">
+    <section class="ed-section">
+      <h3>Fields</h3>
+      <p class="muted small">Drag onto the page, or click a field then click the page. Fields go to the recipient selected below.</p>
+      <label for="active-recipient" class="small">Placing for
+        <select id="active-recipient"></select></label>
+      <div class="palette" id="palette"></div>
+    </section>
+    <section class="ed-section" id="props" hidden>
+      <div class="panel-head"><h3>Selected field</h3><button class="btn btn-quiet small btn-danger" type="button" id="prop-delete">Delete</button></div>
+      <label for="prop-recipient" class="small">Recipient<select id="prop-recipient"></select></label>
+      <label class="check small" for="prop-required"><input type="checkbox" id="prop-required"> Required</label>
+      <label for="prop-label" class="small" id="prop-label-wrap">Label <span class="hint">Shown to the signer</span><input type="text" id="prop-label" maxlength="80"></label>
+      <p class="muted small" id="prop-help"></p>
+    </section>
+  </aside>
+</div>
+
+<div class="modal" id="send-modal" hidden role="dialog" aria-modal="true" aria-labelledby="send-title">
+  <div class="modal-card">
+    <h2 id="send-title">Send envelope?</h2>
+    <div id="send-summary" class="stack" style="gap:8px"></div>
+    <div class="row"><button class="btn btn-primary" id="send-confirm">Send</button><button class="btn btn-quiet" id="send-cancel">Cancel</button></div>
+  </div>
+</div>
+<div class="modal" id="tpl-modal" hidden role="dialog" aria-modal="true" aria-labelledby="tpl-title">
+  <div class="modal-card">
+    <h2 id="tpl-title">Save as template</h2>
+    <p class="muted small">Saves the documents, fields and recipient roles. Recipient names become role names you can rename.</p>
+    <label for="tpl-name">Template name<input type="text" id="tpl-name"></label>
+    <div class="row"><button class="btn btn-primary" id="tpl-confirm">Save template</button><button class="btn btn-quiet" id="tpl-cancel">Cancel</button></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.EDITOR = {{ payload|tojson }}; window.CSRF = {{ csrf_token()|tojson }};</script>
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+{% endblock %}

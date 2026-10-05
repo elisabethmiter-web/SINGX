@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+{% include "_head.html" %}
+<title>{% block title %}{% endblock %} · {{ business_name }}</title>
+{% block head %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('dashboard') }}">{% include "_mark.html" %}{{ business_name }}</a>
+    <nav class="nav">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint in ('dashboard','envelope_detail') }}">Envelopes</a>
+      <a href="{{ url_for('templates_list') }}" class="{{ 'active' if request.endpoint in ('templates_list','edit_template','use_template') }}">Templates</a>
+      <a href="{{ url_for('verify') }}" class="{{ 'active' if request.endpoint=='verify' }}">Verify</a>
+    </nav>
+    <a class="btn btn-primary" href="{{ url_for('new_envelope') }}">New envelope</a>
+    <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn btn-quiet">Sign out</button></form>
+  </div>
+</header>
+{% block fullbleed %}
+<main class="wrap {% block wrapclass %}{% endblock %}">
+{% include "_flash.html" %}
+{% block content %}{% endblock %}
+</main>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

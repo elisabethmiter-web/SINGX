@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>{% include "_head.html" %}<title>Sign in · {{ business_name }}</title></head>
+<body>
+<main class="login-box">
+  <form class="panel" method="post">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <span class="brand">{% include "_mark.html" %}{{ business_name }}</span>
+    <div class="stack" style="gap:4px"><h1 style="font-size:1.5rem">Sign in</h1><p class="muted small">Send documents for signature and track them.</p></div>
+    {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+    <label for="password">Password<input id="password" type="password" name="password" autofocus autocomplete="current-password"></label>
+    <button class="btn btn-primary btn-lg">Sign in</button>
+  </form>
+</main>
+</body>
+</html>
